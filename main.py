@@ -6,7 +6,7 @@ from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 
-#-------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------
 
 import re
 
@@ -35,7 +35,7 @@ def get_distance(s1, s2):
                 d[(i - 1, j - 1)] + cost)
             if i and j and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
                 d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)
-    return(d[len_s1 - 1, len_s2 - 1])
+    return (d[len_s1 - 1, len_s2 - 1])
 
 
 def check_substring(search_request, original_text, max_distance):
@@ -54,37 +54,17 @@ def check_substring(search_request, original_text, max_distance):
         return True
 
 
-#-------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------
 
-
-
-
-def Univ_file():
+def Univ_file(file_name):
     list_univ = []
-    file = open('University.txt')
+    file = open(file_name)
     for line in file:
         list_univ.append(line.replace('\n', '').split('|'))
         # print(list_univ)
     file.close()
     # print(list_univ)
     return list_univ
-
-
-def KEY_D(d, key):
-    if d == {}:
-        # print("False")
-        return False
-    for i in d.keys():
-        if Format_Univ(key) == Format_Univ(i):
-            # print("True")
-            return True
-        else:
-            # print("False")
-            return False
-
-
-def Format_Univ(Univ):
-    return (str(Univ).lower()).replace(',', ' ')
 
 
 def Sort_Dict_Name(list_inf):
@@ -101,136 +81,101 @@ def Sort_Dict_Name(list_inf):
     # print(Buf_Lst)
     return (Buf_Lst)
 
-
-# Начало обработки таблицы excel
-
-excel_data_file = xlrd.open_workbook('./Vygruzka_17_10.xlsx')
-sheet = excel_data_file.sheet_by_index(0)
-
-list_info_stud = []
-num_rows = sheet.nrows
-num_col = sheet.ncols
-
-dict_univ = {}
-univ = ""
-
-list_univ = Univ_file()
-k = 0
-
-
 def Comp(lst_univ, str_univ):
     for i in lst_univ:
-        result = check_substring(str_univ.lower().replace("'","").replace('"',''), i.lower().replace("'","").replace('"',''), max_distance=5)
+        result = check_substring(str_univ.lower().replace("'", "").replace('"', ''),
+                                 i.lower().replace("'", "").replace('"', ''), max_distance=5)
         if result: return True
     return False
 
 
-for i in range(1, num_rows):
+# Начало обработки таблицы excel
 
-    list_info_stud.append((str(sheet.cell(i, 2)).replace('text:', '').replace("'", "")))
-    list_info_stud.append((str(sheet.cell(i, 6)).replace('text:', '').replace("'", "")))
-    list_info_stud.append((str(sheet.cell(i, 7)).replace('text:', '').replace("'", "")))
-    univ = str(sheet.cell(i, 5)).replace('text:', '').replace("'", "").rstrip()
-    buf_list = list_info_stud[:]
-    key = univ
-    for j in range(0, len(list_univ)):
-        #print(list_univ)
-        if Comp(list_univ[j],univ.lower()):
-            key = list_univ[j][0].upper()
-            break
+def Work_Excel(file_name):
+    excel_data_file = xlrd.open_workbook(file_name)
+    sheet = excel_data_file.sheet_by_index(0)
 
+    list_info_stud = []
 
-    if KEY_D(dict_univ, univ):
-        dict_univ[Format_Univ(key).upper()].append(buf_list)
-    else:
-        dict_univ[Format_Univ(key).upper()] = [buf_list]
-    list_info_stud.clear()
+    num_rows = sheet.nrows
+    num_col = sheet.ncols
 
-for key in dict_univ.keys():
-    #print(key)
-    dict_univ[key] = Sort_Dict_Name(dict_univ[key])
+    dict_univ = {}
+    univ = ""
+
+    list_univ = Univ_file('University.txt')
+
+    for i in range(len(list_univ)):
+        dict_univ[list_univ[i][0]] = []
+
+    for i in range(1, num_rows):
+        list_info_stud.append((str(sheet.cell(i, 2)).replace('text:', '').replace("'", "")))
+        list_info_stud.append((str(sheet.cell(i, 6)).replace('text:', '').replace("'", "")))
+        list_info_stud.append((str(sheet.cell(i, 7)).replace('text:', '').replace("'", "")))
+        univ = str(sheet.cell(i, 5)).replace('text:', '').replace("'", "").rstrip()
+        buf_list = list_info_stud[:]
+        key = ""
+
+        for i in range(len(list_univ)):
+            for j in range(len(list_univ[i])):
+                if univ.lower().replace(' ','') == list_univ[i][j].lower().replace(' ',''):
+                    key = list_univ[i][0]
+                    break
+            if (key != ""):
+                break
+
+        if (key == ""):
+            print(univ," ",buf_list)
+            print("\033[31m {}" .format("University not found") )
+            print("\033[37m {}" .format("") )
+            return
+
+        dict_univ[key].append(buf_list)
+        list_info_stud.clear()
+
+    for key in dict_univ.keys(): #sorted
+        dict_univ[key] = Sort_Dict_Name(dict_univ[key])
+
+    # print("EXCELLENT")
+    return(dict_univ)
+
 
 # Конец обработки excel
 
+def Print_dict(d):
+    for i in d.keys():
+        print(i, " : ", d[i])
+
+Dict_info = {}
+
+Dict_info = Work_Excel(file_name = './vygruzka_17_10.xlsx')
+
+#Print_dict(Dict_info)
+print(len(Dict_info['РТУ МИРЭА']),Dict_info['РТУ МИРЭА'])
+
+
+
+
 # Начало работы с google sheets
 
-scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+def google_sheet_work(Name_Sheets):
+    scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+    client = gspread.authorize(creds)
+    sheet = client.open(Name_Sheets).sheet1
+    data = sheet.get_all_records()
 
-creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+    key = 'РТУ МИРЭА'
+    for i in range(0, len(Dict_info[key])):
+        # row = [i - 1 , "Титаренко Алексей Андреевич" , "https://vk.com/l0ki69" , "https://sun9-46.userapi.com/c855232/v855232754/1eee16/DgBkCyRvxjs.jpg"]
+        row = [i + 1]
+        row.extend(Dict_info[key][i])
 
-client = gspread.authorize(creds)
+        sheet.insert_row(row, i + 2)
 
-Name_Sheets = "SheetsTest"
-
-sheet = client.open(Name_Sheets).sheet1
-
-data = sheet.get_all_records()
-
-print(dict_univ)
-
-
-k = 0
-
-for i in dict_univ.keys():
-    key = i
-    k += 1
-    #print(key)
-    if k == 5: break
-    print(dict_univ[key])
-
-for i in range(0, len(dict_univ[key])):
-    # row = [i - 1 , "Титаренко Алексей Андреевич" , "https://vk.com/l0ki69" , "https://sun9-46.userapi.com/c855232/v855232754/1eee16/DgBkCyRvxjs.jpg"]
-    row = [i + 1]
-    row.extend(dict_univ[key][i])
-    # for j in range(0,len(row)):
-    # print(type(row[j]))
-    # print(row)
-    sheet.insert_row(row, i+2)
-
-# pprint(data)
+    #pprint(data)
 
 # Конец работы с google sheets
 
-
-"""
-
-# Файл, полученный в Google Developer Console
-CREDENTIALS_FILE = 'creds.json'
-# ID Google Sheets документа (можно взять из его URL)
-spreadsheet_id = '1iX8QhJQOqJZfFpVPUeIPE4BD1YbBwdZ6HwcrCCVo-6w'
-
-# Авторизуемся и получаем service — экземпляр доступа к API
-credentials = ServiceAccountCredentials.from_json_keyfile_name(
-    CREDENTIALS_FILE,
-    ['https://www.googleapis.com/auth/spreadsheets',
-     'https://www.googleapis.com/auth/drive'])
-httpAuth = credentials.authorize(httplib2.Http())
-service = apiclient.discovery.build('sheets', 'v4', http=httpAuth)
-
-
-# Пример чтения файла
-values = service.spreadsheets().values().get(
-    spreadsheetId=spreadsheet_id,
-    range='A1:E10',
-    majorDimension='COLUMNS'
-).execute()
-pprint(values)
-
-
-# Пример записи в файл
-values = service.spreadsheets().values().batchUpdate(
-    spreadsheetId=spreadsheet_id,
-    body={
-        "valueInputOption": "USER_ENTERED",
-        "data": [
-            {"range": "B3:C4",
-             "majorDimension": "ROWS",
-             "values": [["This is B3", "This is C3"], ["This is B4", "This is C4"]]},
-            {"range": "D5:E6",
-             "majorDimension": "COLUMNS",
-             "values": [["This is D5", "This is D6"], ["This is E5", "=5+5"]]}
-        ]
-    }
-).execute()
-"""
+google_sheet_work("SheetsTest")
