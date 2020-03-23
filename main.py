@@ -6,56 +6,6 @@ from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 
-# -------------------------------------------------------------------------------------------------------------
-
-import re
-
-
-def get_substrings(string):
-    """Функция разбивки на слова"""
-    return re.split('\W+', string)
-
-
-def get_distance(s1, s2):
-    """Расстояние Дамерау-Левенштейна"""
-    d, len_s1, len_s2 = {}, len(s1), len(s2)
-    for i in range(-1, len_s1 + 1):
-        d[(i, -1)] = i + 1
-    for j in range(-1, len_s2 + 1):
-        d[(-1, j)] = j + 1
-    for i in range(len_s1):
-        for j in range(len_s2):
-            if s1[i] == s2[j]:
-                cost = 0
-            else:
-                cost = 1
-            d[(i, j)] = min(
-                d[(i - 1, j)] + 1,
-                d[(i, j - 1)] + 1,
-                d[(i - 1, j - 1)] + cost)
-            if i and j and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
-                d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)
-    return (d[len_s1 - 1, len_s2 - 1])
-
-
-def check_substring(search_request, original_text, max_distance):
-    """Проверка нечёткого вхождения одного набора слов в другой"""
-    substring_list_1 = get_substrings(search_request)
-    substring_list_2 = get_substrings(original_text)
-
-    not_found_count = len(substring_list_1)
-
-    for substring_1 in substring_list_1:
-        for substring_2 in substring_list_2:
-            if get_distance(substring_1, substring_2) <= max_distance:
-                not_found_count -= 1
-
-    if not not_found_count:
-        return True
-
-
-# -------------------------------------------------------------------------------------------------------------
-
 def Univ_file(file_name):
     list_univ = []
     file = open(file_name)
@@ -81,12 +31,7 @@ def Sort_Dict_Name(list_inf):
     # print(Buf_Lst)
     return (Buf_Lst)
 
-def Comp(lst_univ, str_univ):
-    for i in lst_univ:
-        result = check_substring(str_univ.lower().replace("'", "").replace('"', ''),
-                                 i.lower().replace("'", "").replace('"', ''), max_distance=5)
-        if result: return True
-    return False
+
 
 
 # Начало обработки таблицы excel
@@ -151,7 +96,8 @@ Dict_info = {}
 Dict_info = Work_Excel(file_name = './vygruzka_17_10.xlsx')
 
 #Print_dict(Dict_info)
-print(len(Dict_info['РТУ МИРЭА']),Dict_info['РТУ МИРЭА'])
+
+#print(len(Dict_info['РТУ МИРЭА']),Dict_info['РТУ МИРЭА'])
 
 
 
@@ -166,14 +112,16 @@ def google_sheet_work(Name_Sheets):
     sheet = client.open(Name_Sheets).sheet1
     data = sheet.get_all_records()
 
-    key = 'РТУ МИРЭА'
+    key = 'Бгуор'
+    print(Dict_info[key])
+    print(len(Dict_info[key]))
     for i in range(0, len(Dict_info[key])):
         # row = [i - 1 , "Титаренко Алексей Андреевич" , "https://vk.com/l0ki69" , "https://sun9-46.userapi.com/c855232/v855232754/1eee16/DgBkCyRvxjs.jpg"]
         row = [i + 1]
         row.extend(Dict_info[key][i])
 
         sheet.insert_row(row, i + 2)
-
+        row.clear()
     #pprint(data)
 
 # Конец работы с google sheets
