@@ -26,10 +26,18 @@ class Google_Sheets:
 
     def get_data(self, str_col):
         index = self.__get_col_index(str_col)
-        return self.Sheet.col_values(index) if index != - 1 else []
+        if index != -1:
+            lst = self.Sheet.col_values(index)
+            lst.remove(str_col)
+            return lst
+        else:
+            return []
+
 
     def add_data(self, str_col, lst):
         index = self.__get_col_index(str_col)
+        if index == -1:
+            return 0
         cell_range = chr(64 + index) + "2" + ":" + chr(64 + index) + str(len(lst))
         cell_list = self.Sheet.range(cell_range)
         k = 0
