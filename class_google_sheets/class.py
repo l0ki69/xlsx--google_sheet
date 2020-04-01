@@ -34,16 +34,24 @@ class Google_Sheets:
             return []
 
 
+
     def add_data(self, str_col, lst):
         index = self.__get_col_index(str_col)
         if index == -1:
             return 0
-        cell_range = chr(64 + index) + "2" + ":" + chr(64 + index) + str(len(lst))
+        cell_range = chr(64 + index) + "2" + ":" + chr(64 + index) + str(len(lst) + 2)
         cell_list = self.Sheet.range(cell_range)
         k = 0
         for cell in cell_list:
+            if k == len(lst):
+                break
             cell.value = lst[k]
             k += 1
+        k = 0
+        for i in range(0, len(lst)):
+            if (type(lst[i]) == int):
+                k += lst[i]
+        cell_list[len(cell_list) - 1].value = k
 
         self.Sheet.update_cells(cell_list)
 
@@ -51,9 +59,11 @@ Name = "SheetTest"
 
 test = Google_Sheets(Name)
 
-buf = test.get_data("strava_nickname")
+#buf = test.get_data("strava_nickname")
 
-print(buf)
+#print(buf)
 
 test.add_data("18.03", [1, 2, 3, 4, 5, 6, 7])
+
+test.add_data("19.03", [1, 2, 3, 4, 5, 6, 7])
 
